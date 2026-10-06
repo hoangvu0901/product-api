@@ -1,0 +1,86 @@
+name: Product API - CRUD CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    services:
+      mongodb:
+        image: mongo:8.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'quit(db.adminCommand({ ping: 1 }).ok === 1 ? 0 : 1)'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --health-start-period 20s
+
+    env:
+      NODE_ENV: test
+      PORT: "3000"
+      MONGO_URI: mongodb://127.0.0.1:27017/productdb_ci
+      API_URL: http://127.0.0.1:3000
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run model tests
+        run: npm test
+
+      - name: Start Product API
+        run: |
+          node src/server.js > api.log 2>&1 &
+          echo $! > api.pid
+
+      - name: Wait for API healthcheck
+        shell: bash
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error \
+              --max-time 3 "$API_URL/health"; then
+              echo ""
+              echo "API healthcheck passed"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "API healthcheck failed"
+          cat api.log
+          exit 1
+
+      - name: Run CRUD integration tests
+        run: npm run test:integration
+
+      - name: Show API logs on failure
+        if: failure()
+        run: cat api.log || true
+
+      - name: Stop Product API
+        if: always()
+        run: |
+          if [ -f api.pid ]; then
+            kill "$(cat api.pid)" || true
+          fi
