@@ -5,6 +5,7 @@ const Product = require("./product");
 const app = express();
 
 app.use(express.json());
+
 // Kiem tra API va ket noi MongoDB
 app.get("/health", async (req, res) => {
   try {
@@ -31,6 +32,7 @@ app.get("/health", async (req, res) => {
     });
   }
 });
+
 // Kiem tra du lieu cho POST va PUT
 function validateProduct(req, res, next) {
   const { pid, pname, price, quantity } = req.body || {};
@@ -62,9 +64,11 @@ function validateProduct(req, res, next) {
   next();
 }
 
-// Trang kiem tra API
+// Trang kiem tra phien ban CD
 app.get("/", (req, res) => {
-  res.json({ message: "Product API dang hoat dong" });
+  res.json({
+    message: "Product API - CD tu dong thanh cong",
+  });
 });
 
 // CREATE: Them san pham
@@ -84,7 +88,9 @@ app.get("/api/products/:pid", async (req, res) => {
   const product = await Product.findOne({ pid: req.params.pid });
 
   if (!product) {
-    return res.status(404).json({ message: "Khong tim thay san pham" });
+    return res.status(404).json({
+      message: "Khong tim thay san pham",
+    });
   }
 
   res.json(product);
@@ -105,7 +111,9 @@ app.put("/api/products/:pid", validateProduct, async (req, res) => {
   );
 
   if (!product) {
-    return res.status(404).json({ message: "Khong tim thay san pham" });
+    return res.status(404).json({
+      message: "Khong tim thay san pham",
+    });
   }
 
   res.json(product);
@@ -118,33 +126,49 @@ app.delete("/api/products/:pid", async (req, res) => {
   });
 
   if (!product) {
-    return res.status(404).json({ message: "Khong tim thay san pham" });
+    return res.status(404).json({
+      message: "Khong tim thay san pham",
+    });
   }
 
-  res.json({ message: "Da xoa san pham", pid: product.pid });
+  res.json({
+    message: "Da xoa san pham",
+    pid: product.pid,
+  });
 });
 
 // URL khong ton tai
 app.use((req, res) => {
-  res.status(404).json({ message: "API khong ton tai" });
+  res.status(404).json({
+    message: "API khong ton tai",
+  });
 });
 
 // Xu ly loi tap trung
 app.use((err, req, res, next) => {
   if (err.code === 11000) {
-    return res.status(409).json({ message: "pid da ton tai" });
+    return res.status(409).json({
+      message: "pid da ton tai",
+    });
   }
 
   if (err.name === "ValidationError" || err.name === "CastError") {
-    return res.status(400).json({ message: err.message });
+    return res.status(400).json({
+      message: err.message,
+    });
   }
 
   if (err.type === "entity.parse.failed") {
-    return res.status(400).json({ message: "JSON khong hop le" });
+    return res.status(400).json({
+      message: "JSON khong hop le",
+    });
   }
 
   console.error(err);
-  res.status(500).json({ message: "Loi may chu" });
+
+  res.status(500).json({
+    message: "Loi may chu",
+  });
 });
 
 module.exports = app;
