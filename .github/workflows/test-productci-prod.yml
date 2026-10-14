@@ -71,7 +71,7 @@ jobs:
           cat api.log
           exit 1
 
-      - name: Run CRUD integration testsssssssssss
+      - name: Run CRUD integration tests
         run: npm run test:integration
 
       - name: Show API logs on failure
