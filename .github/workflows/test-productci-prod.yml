@@ -117,6 +117,6 @@ jobs:
           docker push "$IMAGE_NAME:$GITHUB_SHA"
           docker push "$IMAGE_NAME:latest"
 
-      - name: Logout from Docker Hub
+      - name: Logout from Docker Hubbbbbb
         if: always()
         run: docker logout
